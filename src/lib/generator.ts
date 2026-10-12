@@ -67,18 +67,80 @@ function growRegions(size: number, solution: Position[], random: Random): number
   return regions;
 }
 
-export function generatePuzzle(size: number, seed: number, maxAttempts = 160): Board {
+function regionSizes(regions: number[][], size: number): number[] {
+  return Array.from({ length: size }, (_, region) => regions.flat().filter((value) => value === region).length);
+}
+
+function hasReadableRegions(regions: number[][], size: number): boolean {
+  return regionSizes(regions, size).every((count) => count >= Math.max(3, Math.floor(size / 2)));
+}
+
+function growGuaranteedRegions(size: number, solution: Position[], seed: number): number[][] | null {
+  const random = mulberry32(seed + 4000007);
+  let regions = Array.from({ length: size }, () => Array(size).fill(0));
+  solution.slice(1).forEach((position) => {
+    regions[position.row][position.col] = position.row;
+  });
+  const minimumRegionSize = Math.max(3, Math.floor(size / 2));
+  let changed = true;
+
+  while (changed) {
+    changed = false;
+    const regionOrder = shuffle(Array.from({ length: size - 1 }, (_, index) => index + 1), random)
+      .sort((a, b) => regionSizes(regions, size)[a] - regionSizes(regions, size)[b]);
+    for (const region of regionOrder) {
+      if (regionSizes(regions, size)[region] >= minimumRegionSize) continue;
+      const candidates = shuffle(
+        regions.flatMap((row, rowIndex) => row.flatMap((value, colIndex) => value === 0 ? [{ row: rowIndex, col: colIndex }] : [])),
+        random,
+      ).filter((cell) => [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([row, col]) => {
+        const nextRow = cell.row + row;
+        const nextCol = cell.col + col;
+        return nextRow >= 0 && nextRow < size && nextCol >= 0 && nextCol < size && regions[nextRow][nextCol] === region;
+      }));
+      for (const cell of candidates) {
+        const nextRegions = regions.map((row) => [...row]);
+        nextRegions[cell.row][cell.col] = region;
+        const candidate: Board = { id: `generated-${size}x${size}-${seed}-grown`, size, seed, regions: nextRegions, solution };
+        if (validateBoard(candidate) && countSolutions(candidate) === 1) {
+          regions = nextRegions;
+          changed = true;
+          break;
+        }
+      }
+    }
+  }
+
+  return regionSizes(regions, size).every((count) => count >= minimumRegionSize) ? regions : null;
+}
+
+function createGuaranteedPuzzle(size: number, seed: number): Board {
+  for (let attempt = 0; attempt < 200; attempt += 1) {
+    const random = mulberry32(seed + 1000003 + attempt * 7919);
+    const solution = findNonAdjacentSolution(size, random);
+    if (!solution) continue;
+    const regions = growGuaranteedRegions(size, solution, seed + attempt);
+    if (!regions) continue;
+    const candidate: Board = { id: `generated-${size}x${size}-${seed}-grown`, size, seed, regions, solution };
+    if (validateBoard(candidate) && countSolutions(candidate) === 1) return candidate;
+  }
+  throw new Error(`Não foi possível preparar um puzzle ${size}x${size} único agora.`);
+}
+
+export function generatePuzzle(size: number, seed: number, maxAttempts = 5000): Board {
   if (!Number.isInteger(size) || size < 4) throw new Error("O tamanho mínimo do tabuleiro é 4x4.");
-  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+  const attempts = size >= 8 ? Math.min(maxAttempts, 1000) : maxAttempts;
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
     const random = mulberry32(seed + attempt * 7919);
     const solution = findNonAdjacentSolution(size, random);
     if (!solution) continue;
     const regions = growRegions(size, solution, random);
     const candidate: Board = { id: `generated-${size}x${size}-${seed}`, size, seed, regions, solution };
     if (!validateRegionMap(regions, size) || !validateBoard(candidate)) continue;
+    if (size >= 8 && !hasReadableRegions(regions, size)) continue;
     if (countSolutions(candidate) === 1) return candidate;
   }
-  throw new Error(`Não foi possível preparar um puzzle ${size}x${size} único agora.`);
+  return createGuaranteedPuzzle(size, seed);
 }
 
 export function generateWithFallback(size: number, seed: number): Board {

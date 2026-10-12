@@ -23,7 +23,7 @@ type Screen = "home" | "levels" | "tutorial" | "game";
 type GamePhase = "playing" | "victory" | "defeat";
 type Progress = { unlocked: string[]; completed: string[] };
 
-const DEFAULT_PROGRESS: Progress = { unlocked: [LEVELS[0].id], completed: [] };
+const DEFAULT_PROGRESS: Progress = { unlocked: LEVELS.map((level) => level.id), completed: [] };
 const STORAGE_KEY = "chomp-hunt-progress";
 
 function readProgress(): Progress {
@@ -32,7 +32,7 @@ function readProgress(): Progress {
     const stored = window.localStorage.getItem(STORAGE_KEY);
     if (!stored) return DEFAULT_PROGRESS;
     const parsed = JSON.parse(stored) as Partial<Progress>;
-    return { unlocked: parsed.unlocked?.length ? parsed.unlocked : DEFAULT_PROGRESS.unlocked, completed: parsed.completed ?? [] };
+    return { unlocked: Array.from(new Set([...(parsed.unlocked ?? []), ...DEFAULT_PROGRESS.unlocked])), completed: parsed.completed ?? [] };
   } catch {
     return DEFAULT_PROGRESS;
   }
@@ -128,7 +128,7 @@ export default function Home() {
   function clearCell(row: number, col: number) { if (phase !== "playing" || cells[row][col] === "empty") return; const next = cloneCells(cells); next[row][col] = "empty"; commitCells(next); }
 
   function handlePointerDown(row: number, col: number, event: PointerEvent<HTMLButtonElement>) {
-    if (event.button !== 0 || phase !== "playing") return;
+    if ((event.button !== 0 && event.pointerType !== "touch") || phase !== "playing") return;
     const key = boardCellKey({ row, col });
     pointerStart.current = { key, x: event.clientX, y: event.clientY, pointerId: event.pointerId };
     const mode = cells[row][col] === "mark" ? "erase" : cells[row][col] === "empty" ? "mark" : "none";
@@ -164,7 +164,7 @@ export default function Home() {
   }
 
   function handlePointerUp(row: number, col: number, event: PointerEvent<HTMLButtonElement>) {
-    if (event.button !== 0) return;
+    if (event.button !== 0 && event.pointerType !== "touch") return;
     const key = boardCellKey({ row, col }); const start = pointerStart.current; pointerStart.current = null;
     const gesture = dragGesture.current;
     dragGesture.current = null;
