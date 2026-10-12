@@ -45,6 +45,20 @@ function freshBoardForLevel(level: LevelDefinition): Board {
   throw new Error("Este nível precisa ser preparado pelo gerador.");
 }
 
+function createInfiniteLevel(round: number): LevelDefinition {
+  const size = Math.min(10, 4 + Math.floor((round - 1) / 2));
+  const difficulty = size >= 10 ? "expert" : size >= 8 ? "hard" : size >= 6 ? "medium" : size === 5 ? "easy" : "tutorial";
+  return {
+    id: `infinite-${round}`,
+    label: `∞${round}`,
+    title: `Caçada infinita · fase ${round}`,
+    size,
+    seed: 9000 + round * 7919,
+    description: "A toca fica mais difícil a cada nova fase.",
+    difficulty,
+  };
+}
+
 function MiniBoard() {
   const cells = ["leaf", "leaf", "sky", "sky", "leaf", "mint", "sky", "sky", "mint", "mint", "butter", "butter", "mint", "butter", "butter", "butter"];
   return <div className="mini-board" aria-hidden>{cells.map((region, index) => <span key={index} className={`mini-cell mini-${region}`} />)}</div>;
@@ -74,6 +88,8 @@ export default function Home() {
   const [invalidCell, setInvalidCell] = useState<string | null>(null);
   const [generationState, setGenerationState] = useState<"idle" | "loading" | "error">("idle");
   const [generationError, setGenerationError] = useState("");
+  const [infiniteMode, setInfiniteMode] = useState(false);
+  const [infiniteRound, setInfiniteRound] = useState(1);
   const [rulesOpen, setRulesOpen] = useState(false);
   const pendingTaps = useRef<Map<string, number>>(new Map());
   const pointerStart = useRef<{ key: string; x: number; y: number; pointerId: number } | null>(null);
@@ -90,13 +106,24 @@ export default function Home() {
   useEffect(() => () => { pendingTaps.current.forEach((timer) => window.clearTimeout(timer)); if (invalidTimer.current) window.clearTimeout(invalidTimer.current); }, []);
 
   function beginGame(nextBoard: Board, level: LevelDefinition) {
-    setSelectedLevel(level); setBoard(nextBoard); setCells(createEmptyCells(nextBoard.size)); setHistory([]); setLives(3); setPhase("playing"); setInvalidCell(null); setScreen("game");
+    setSelectedLevel(level); setBoard(nextBoard); setCells(createEmptyCells(nextBoard.size)); setHistory([]); setLives(3); setPhase("playing"); setInvalidCell(null); setGenerationState("idle"); setScreen("game");
   }
 
   function chooseLevel(level: LevelDefinition) {
+    const isInfinite = level.id.startsWith("infinite-");
+    setInfiniteMode(isInfinite);
+    if (isInfinite) setInfiniteRound(Number(level.id.replace("infinite-", "")) || 1);
+    generateLevel(level);
+  }
+
+  function startInfinite() {
+    chooseLevel(createInfiniteLevel(1));
+  }
+
+  function generateLevel(level: LevelDefinition) {
     setGenerationError("");
-    if (level.size === 4) { setGenerationState("idle"); beginGame(freshBoardForLevel(level), level); return; }
-    setSelectedLevel(level); setGenerationState("loading");
+    if (level.size === 4 && !level.id.startsWith("infinite-")) { setGenerationState("idle"); beginGame(freshBoardForLevel(level), level); return; }
+    setSelectedLevel(level); setGenerationState("loading"); setScreen("game");
     const worker = new Worker(new URL("../src/lib/generator.worker.ts", import.meta.url));
     worker.onmessage = (event: MessageEvent<{ ok: boolean; board?: Board; error?: string }>) => { worker.terminate(); if (event.data.ok && event.data.board) { setGenerationState("idle"); beginGame(event.data.board, level); } else { setGenerationState("error"); setGenerationError(event.data.error ?? "O mapa não ficou pronto. Tente novamente."); } };
     worker.onerror = () => { worker.terminate(); setGenerationState("error"); setGenerationError("O mapa não ficou pronto. Tente novamente."); };
@@ -184,13 +211,14 @@ export default function Home() {
   function undo() { if (phase !== "playing" || history.length === 0) return; setCells(cloneCells(history[history.length - 1])); setHistory((current) => current.slice(0, -1)); }
   function restart() { beginGame(board, selectedLevel); }
   const chomps = positionsFromCells(cells).length;
-  const unlocked = (id: string) => progress.unlocked.includes(id);
+  const unlocked = (id: string) => infiniteMode || progress.unlocked.includes(id);
   const completed = (id: string) => progress.completed.includes(id);
-  const nextLevel = LEVELS[LEVELS.findIndex((level) => level.id === selectedLevel.id) + 1];
+  const nextLevel = infiniteMode ? createInfiniteLevel(infiniteRound + 1) : LEVELS[LEVELS.findIndex((level) => level.id === selectedLevel.id) + 1];
 
   return <main className="app-shell">
     <TopBar onHome={() => setScreen("home")} onLevels={() => setScreen("levels")} />
-    {screen === "home" && <section className="home-screen page-content"><div className="home-copy"><p className="eyebrow">UM PUZZLE DE LÓGICA ACONCHEGANTE</p><h1>CHOMP <span>HUNT</span></h1><p className="home-description">Ajude os Chomps a encontrar seu cantinho. Pense com calma, marque suas pistas e deixe cada mordida no lugar certo.</p><div className="home-actions"><CozyButton onClick={() => chooseLevel(LEVELS[0])}>Jogar agora <span className="button-arrow">→</span></CozyButton><button className="link-button" onClick={() => setScreen("tutorial")}>Como jogar <span>↗</span></button></div><p className="home-hint"><span className="hint-dot" /> 4×4 · primeiro nível desbloqueado</p></div><div className="home-art" aria-label="Chomp descansando ao lado de um tabuleiro"><div className="art-sun" /><div className="art-leaf leaf-one">✦</div><div className="art-leaf leaf-two">✿</div><div className="art-card"><MiniBoard /><span>encontre o equilíbrio</span></div><div className="art-chomp"><ChompSprite size={128} variant={1} /></div><div className="art-shadow" /></div></section>}
+    {screen === "game" && generationState === "loading" && <div className="generation-overlay"><span className="loading-dot" /> preparando a próxima fase…</div>}
+    {screen === "home" && <section className="home-screen page-content"><div className="home-copy"><p className="eyebrow"></p><h1>CHOMP <span>HUNT</span></h1><p className="home-description">Ajude os Chomps a encontrar seu cantinho. Pense com calma, marque suas pistas e deixe cada mordida no lugar certo.</p><div className="home-actions"><CozyButton onClick={() => chooseLevel(LEVELS[0])}>Jogar agora <span className="button-arrow">→</span></CozyButton><CozyButton tone="secondary" className="infinite-button" onClick={startInfinite}><span className="infinite-icon" aria-hidden>∞</span> Modo infinito</CozyButton><button className="link-button" onClick={() => setScreen("tutorial")}>Como jogar <span>↗</span></button></div><p className="home-hint"><span className="hint-dot" /> 4×4 · primeiro nível desbloqueado</p></div><div className="home-art" aria-label="Chomp descansando ao lado de um tabuleiro"><div className="art-sun" /><div className="art-leaf leaf-one">✦</div><div className="art-leaf leaf-two">✿</div><div className="art-card"><MiniBoard /><span>encontre o equilíbrio</span></div><div className="art-chomp"><ChompSprite size={128} variant={1} /></div><div className="art-shadow" /></div></section>}
     {screen === "levels" && <section className="levels-screen page-content narrow-content"><div className="section-heading"><div><p className="eyebrow">SUA JORNADA</p><h2>Escolha um nível</h2></div><span className="progress-badge">{progress.completed.length}/{LEVELS.length} completos</span></div><div className="level-list">{LEVELS.map((level) => <LevelCard key={level.id} level={level} unlocked={unlocked(level.id)} completed={completed(level.id)} onSelect={() => chooseLevel(level)} />)}</div>{generationState === "loading" && <div className="toast-message"><span className="loading-dot" /> preparando o mapa {selectedLevel.size}×{selectedLevel.size}…</div>}{generationState === "error" && <div className="toast-message error-message">{generationError} <button onClick={() => chooseLevel(selectedLevel)}>Tentar de novo</button></div>}</section>}
     {screen === "tutorial" && <section className="tutorial-screen page-content narrow-content"><div className="section-heading"><div><p className="eyebrow">AQUEÇA AS PATINHAS</p><h2>Como jogar</h2></div><button className="close-x" onClick={() => setScreen("home")} aria-label="Fechar">×</button></div><div className="tutorial-grid"><article className="tutorial-card"><span className="rule-icon">×</span><div><strong>Marque uma pista</strong><p>Um toque coloca um X. Toque outra vez para tirar.</p></div></article><article className="tutorial-card"><span className="rule-icon">●</span><div><strong>Chame um Chomp</strong><p>Dois toques tentam posicionar o Chomp na célula.</p></div></article><article className="tutorial-card"><span className="rule-icon">⌗</span><div><strong>Observe as regras</strong><p>Um Chomp por linha, coluna e região. Eles não encostam, nem na diagonal.</p></div></article><article className="tutorial-card"><span className="rule-icon">♥</span><div><strong>Você tem três vidas</strong><p>Uma tentativa em conflito custa uma vida. Uma hipótese válida nunca entrega a solução.</p></div></article></div><div className="tutorial-footer"><span>Teclado: Espaço marca · Enter coloca · Delete limpa</span><CozyButton onClick={() => chooseLevel(LEVELS[0])}>Começar tutorial →</CozyButton></div></section>}
     {screen === "game" && <section className="game-screen page-content"><div className="game-heading"><button className="back-button" onClick={() => setScreen("levels")}>← <span>Níveis</span></button><div className="game-title"><p className="eyebrow">{DIFFICULTY_LABELS[selectedLevel.difficulty]}</p><h2>{selectedLevel.title}</h2></div><div className="game-level-pill">{selectedLevel.size}×{selectedLevel.size}</div></div><div className="game-layout"><aside className="side-panel left-panel"><div className="hud-card"><span className="hud-label">VIDAS</span><Hearts lives={lives} /><span className="hud-note">Cada erro de regra<br />consome uma vida.</span></div><div className="note-card"><span className="note-pin" /><strong>Dica da toca</strong><p>Use X para riscar possibilidades. A solução continua escondida até você completar o mapa.</p></div></aside><div className="board-column"><div className="board-status"><span><b>{chomps}</b> de {board.size} Chomps</span><span className="status-divider" /><span className="status-soft">um por região</span></div><GameBoard board={board} cells={cells} invalidCell={invalidCell} disabled={phase !== "playing"} onPointerDown={handlePointerDown} onPointerEnter={handlePointerEnter} onPointerUp={handlePointerUp} onKeyDown={handleKeyDown} /><p className="gesture-hint"><span className="tap-icon">◉</span> toque para marcar <span className="hint-separator">·</span> <span className="double-icon">◎</span> toque duas vezes para colocar <span className="hint-separator">·</span> arraste para marcar ou apagar X</p></div><aside className="side-panel right-panel"><div className="rules-mini"><span className="hud-label">REGRAS</span><p><i>01</i> uma linha</p><p><i>02</i> uma coluna</p><p><i>03</i> uma região</p><p><i>04</i> sem vizinhos</p></div><div className="game-actions"><button onClick={undo} disabled={history.length === 0}>↶ Desfazer</button><button onClick={restart}>↻ Reiniciar</button></div></aside></div></section>}

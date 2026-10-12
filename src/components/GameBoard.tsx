@@ -26,7 +26,7 @@ export function GameBoard({ board, cells, invalidCell, disabled = false, onPoint
         role="grid"
         aria-label={`Tabuleiro ${board.size} por ${board.size}`}
         onPointerMove={(event) => {
-          const target = event.target;
+          const target = document.elementFromPoint(event.clientX, event.clientY) ?? event.target;
           if (!(target instanceof Element)) return;
           const cell = target.closest<HTMLButtonElement>("[data-row][data-col]");
           if (!cell) return;
@@ -50,10 +50,18 @@ export function GameBoard({ board, cells, invalidCell, disabled = false, onPoint
               aria-label={`Linha ${rowIndex + 1}, coluna ${colIndex + 1}, ${state === "empty" ? "vazia" : state === "mark" ? "marcada" : "Chomp"}`}
               className={`game-cell ${REGION_CLASSES[region % REGION_CLASSES.length]} ${state === "mark" ? "cell-mark" : ""} ${state === "chomp" ? "cell-chomp" : ""} ${invalidCell === key ? "cell-invalid" : ""}`}
               disabled={disabled}
-              onPointerDown={(event) => onPointerDown(rowIndex, colIndex, event)}
+              onPointerDown={(event) => {
+                onPointerDown(rowIndex, colIndex, event);
+                try {
+                  event.currentTarget.setPointerCapture(event.pointerId);
+                } catch {
+                  // Alguns navegadores móveis não permitem captura em botões desabilitados.
+                }
+              }}
               onPointerEnter={(event) => onPointerEnter(rowIndex, colIndex, event)}
               onPointerMove={(event) => onPointerMove(rowIndex, colIndex, event)}
               onPointerUp={(event) => onPointerUp(rowIndex, colIndex, event)}
+              onPointerCancel={(event) => onPointerUp(rowIndex, colIndex, event)}
               onKeyDown={(event) => onKeyDown(rowIndex, colIndex, event)}
             >
               {state === "mark" && <span className="mark-symbol" aria-hidden>×</span>}

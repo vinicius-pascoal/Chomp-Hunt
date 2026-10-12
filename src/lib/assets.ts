@@ -20,4 +20,8 @@ export const ASSETS = {
     left: "/assets/ui/cozy/arrows/ArrowBrownOuline16.png",
     right: "/assets/ui/cozy/arrows/ArrowBrownOuline17.png",
   },
+  cursors: {
+    large: "/assets/ui/cozy/cursors/large/Cursor1_128px.png",
+    largeClicked: "/assets/ui/cozy/cursors/large/Cursor1Clicked_128px.png",
+  },
 } as const;
