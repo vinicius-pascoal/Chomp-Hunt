@@ -45,3 +45,8 @@ O progresso desbloqueado e os níveis concluídos são salvos em `localStorage` 
 - O tutorial e o primeiro nível usam o puzzle 4×4 obrigatório. Níveis maiores são gerados sob demanda no Web Worker e exibem uma mensagem recuperável se o limite de tentativas não encontrar uma solução única.
 - A spritesheet fornecida possui três variantes visuais, não quatro direções completas; o componente seleciona linha, frame, FPS e tamanho sem borrar a pixel art.
 - Os assets do Cozy UI são uma demo; verifique os termos do autor antes de publicar comercialmente.
+
+## Créditos dos assets
+
+- Chomp e sprites: [Chom-Bombs — Chiecola](https://chiecola.itch.io/chom-bombs)
+- Interface e elementos visuais: [Cozy UI — Dobo](https://dobo-ui.itch.io/cozy-ui)
