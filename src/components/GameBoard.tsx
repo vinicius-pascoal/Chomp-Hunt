@@ -36,7 +36,7 @@ export function GameBoard({ board, cells, invalidCell, disabled = false, onPoint
               onKeyDown={(event) => onKeyDown(rowIndex, colIndex, event)}
             >
               {state === "mark" && <span className="mark-symbol" aria-hidden>×</span>}
-              {state === "chomp" && <ChompSprite size={Math.min(42, Math.max(26, 180 / board.size))} label="Chomp posicionado" />}
+              {state === "chomp" && <ChompSprite size={Math.min(72, Math.max(38, 300 / board.size))} label="Chomp posicionado" />}
             </button>
           );
         }))}
