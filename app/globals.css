@@ -401,9 +401,29 @@ h2 {
   color: #bc7c62;
 }
 .level-locked {
-  opacity: .42;
+  border: 2px solid #d8cbc2;
+  border-image: none;
+  background: linear-gradient(180deg, #eee9e4 0%, #e5ded8 100%);
+  box-shadow: 0 4px 0 rgba(116, 92, 82, .16), inset 0 1px 0 rgba(255, 255, 255, .65);
+  opacity: .9;
   cursor: not-allowed;
-  filter: grayscale(.3);
+  filter: grayscale(.72);
+}
+.level-locked .level-number {
+  background: #d7d0cb;
+  color: #94857d;
+}
+.level-locked .level-card-copy small {
+  color: #9f9088;
+}
+.level-locked .level-card-copy strong {
+  color: #89766e;
+}
+.level-locked .level-card-copy span {
+  color: #9f918a;
+}
+.level-locked .level-arrow {
+  color: #a18f86;
 }
 .level-completed .level-number {
   background: #c3ded3;

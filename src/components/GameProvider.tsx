@@ -50,8 +50,19 @@ type GameContextValue = {
   onKeyDown: (row: number, col: number, event: KeyboardEvent<HTMLButtonElement>) => void;
 };
 
-const DEFAULT_PROGRESS: Progress = { unlocked: LEVELS.map((level) => level.id), completed: [] };
+const DEFAULT_PROGRESS: Progress = { unlocked: [LEVELS[0].id], completed: [] };
 const STORAGE_KEY = "chomp-hunt-progress";
+
+function getProgressionUnlocks(completed: string[]) {
+  const unlocked = [LEVELS[0].id];
+
+  for (let index = 0; index < LEVELS.length - 1; index += 1) {
+    if (!completed.includes(LEVELS[index].id)) break;
+    unlocked.push(LEVELS[index + 1].id);
+  }
+
+  return unlocked;
+}
 
 function readProgress(): Progress {
   if (typeof window === "undefined") return DEFAULT_PROGRESS;
@@ -59,9 +70,11 @@ function readProgress(): Progress {
     const stored = window.localStorage.getItem(STORAGE_KEY);
     if (!stored) return DEFAULT_PROGRESS;
     const parsed = JSON.parse(stored) as Partial<Progress>;
+    const completed = Array.from(new Set(parsed.completed ?? []));
+
     return {
-      unlocked: Array.from(new Set([...(parsed.unlocked ?? []), ...DEFAULT_PROGRESS.unlocked])),
-      completed: parsed.completed ?? [],
+      unlocked: getProgressionUnlocks(completed),
+      completed,
     };
   } catch {
     return DEFAULT_PROGRESS;
