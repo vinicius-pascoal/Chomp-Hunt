@@ -6,6 +6,7 @@ import { useEffect, useMemo } from "react";
 import type { LevelDefinition } from "@/src/lib/difficulty";
 import { DIFFICULTY_LABELS, LEVELS } from "@/src/lib/difficulty";
 import { CozyButton } from "@/src/components/CozyButton";
+import { ChompSprite } from "@/src/components/ChompSprite";
 import { GameBoard } from "@/src/components/GameBoard";
 import { useGame } from "@/src/components/GameProvider";
 import { ASSETS } from "@/src/lib/assets";
@@ -45,6 +46,7 @@ export function GameScreen({ levelId }: { levelId: string }) {
     phase,
     restart,
     selectedLevel,
+    startInfinite,
     undo,
   } = useGame();
 
@@ -87,7 +89,16 @@ export function GameScreen({ levelId }: { levelId: string }) {
           </aside>
         </div>
       </section>
-      {phase === "victory" && <div className="modal-backdrop"><div className="modal-card result-card victory-card"><div className="confetti-dot">✦</div><p className="eyebrow">MAPA COMPLETO</p><h2>Você encontrou todos!</h2><p>O Chomp está feliz no seu cantinho. Respire fundo e prepare a próxima mordida.</p><CozyButton onClick={() => nextLevel && isLevelUnlocked(nextLevel.id) ? openLevel(nextLevel) : router.push("/levels")}>{nextLevel ? "Próximo nível →" : "Voltar aos níveis"}</CozyButton></div></div>}
+      {phase === "victory" && <div className="modal-backdrop"><div className={`modal-card result-card victory-card ${nextLevel ? "" : "final-victory-card"}`}>
+        {nextLevel ? <div className="confetti-dot">✦</div> : <div className="final-victory-chomp"><ChompSprite size={76} variant={1} label="Chomp comemorando" /></div>}
+        <p className="eyebrow">{nextLevel ? "MAPA COMPLETO" : "TOCA CONQUISTADA"}</p>
+        <h2>{nextLevel ? "Você encontrou todos!" : "A toca está completa!"}</h2>
+        <p>{nextLevel ? "O Chomp está feliz no seu cantinho. Respire fundo e prepare a próxima mordida." : "Você concluiu todas as fases. Ainda há muitos mapas esperando por uma nova caçada."}</p>
+        {nextLevel ? <CozyButton onClick={() => isLevelUnlocked(nextLevel.id) ? openLevel(nextLevel) : router.push("/levels")}>Próximo nível →</CozyButton> : <>
+          <CozyButton onClick={startInfinite}>Explorar modo infinito →</CozyButton>
+          <button className="link-button modal-link" onClick={() => router.push("/levels")}>Voltar aos níveis</button>
+        </>}
+      </div></div>}
       {phase === "defeat" && <div className="modal-backdrop"><div className="modal-card result-card defeat-card"><div className="defeat-face">◌</div><p className="eyebrow">A TOCA FICOU SILENCIOSA</p><h2>As vidas acabaram</h2><p>O mapa continua o mesmo. Tente outra vez com três novas vidas.</p><CozyButton onClick={restart}>Tentar novamente</CozyButton><button className="link-button modal-link" onClick={() => router.push("/levels")}>Voltar aos níveis</button></div></div>}
     </>
   );

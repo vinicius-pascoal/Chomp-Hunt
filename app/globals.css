@@ -832,6 +832,18 @@ h2 {
 .result-card .cozy-button {
   margin-top: 10px;
 }
+.final-victory-card {
+  padding-top: 28px;
+}
+.final-victory-chomp {
+  display: flex;
+  justify-content: center;
+  min-height: 82px;
+  margin-bottom: 2px;
+}
+.final-victory-chomp .chomp-sprite {
+  filter: drop-shadow(0 5px 0 rgba(164, 97, 71, .13));
+}
 .confetti-dot, .defeat-face {
   font-size: 47px;
   color: #dc9873;
