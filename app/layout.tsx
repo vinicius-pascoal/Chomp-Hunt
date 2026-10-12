@@ -9,8 +9,8 @@ const fredoka = Fredoka({
 });
 
 export const metadata: Metadata = {
-  title: "Chomp Hunt — um puzzle aconchegante",
-  description: "Encontre o cantinho de cada Chomp em um puzzle lógico cozy pixel art.",
+  title: "Chomp Hunt",
+  description: "Encontre o cantinho de cada Chomp.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
