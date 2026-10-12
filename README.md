@@ -1,36 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Chomp Hunt
 
-## Getting Started
+Chomp Hunt é um puzzle lógico cozy pixel art em Next.js, TypeScript e Tailwind CSS. O objetivo é posicionar um Chomp por linha, coluna e região, sem que dois Chomps sejam adjacentes — inclusive na diagonal.
 
-First, run the development server:
+## Executar
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abra `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Comandos de verificação:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run lint
+npm test
+npm run build
+```
 
-## Learn More
+## Controles
 
-To learn more about Next.js, take a look at the following resources:
+- Toque/clique: alterna uma marca X.
+- Dois toques/cliques na mesma célula: tenta posicionar um Chomp.
+- Em uma célula com Chomp, toque simples substitui por X; toque duplo remove o Chomp.
+- Teclado: Espaço marca, Enter tenta posicionar e Delete/Backspace limpa.
+- Uma tentativa em conflito consome uma vida. Uma hipótese válida que ainda não fecha o mapa não consome vida.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Arquitetura
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `src/lib/board.ts`: tipos, puzzle tutorial e estado das células.
+- `src/lib/rules.ts`: regras, conflitos e integridade das regiões.
+- `src/lib/solver.ts`: backtracking com poda e contagem limitada a duas soluções.
+- `src/lib/generator.ts`: geração reproduzível, regiões conectadas e unicidade.
+- `src/lib/generator.worker.ts`: execução do gerador fora da thread da interface.
+- `src/lib/difficulty.ts`: catálogo de dificuldades e progressão.
+- `src/components/`: sprite, botões e tabuleiro reutilizáveis.
+- `app/page.tsx`: telas, reducer implícito de partida, gestos e persistência.
 
-## Deploy on Vercel
+O progresso desbloqueado e os níveis concluídos são salvos em `localStorage` com a chave `chomp-hunt-progress`. A fonte Fredoka é carregada globalmente com `next/font/google`. Os caminhos dos assets são centralizados em `src/lib/assets.ts` e os PNGs originais ficam em `public/assets`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Limitações conhecidas
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- O tutorial e o primeiro nível usam o puzzle 4×4 obrigatório. Níveis maiores são gerados sob demanda no Web Worker e exibem uma mensagem recuperável se o limite de tentativas não encontrar uma solução única.
+- A spritesheet fornecida possui três variantes visuais, não quatro direções completas; o componente seleciona linha, frame, FPS e tamanho sem borrar a pixel art.
+- Os assets do Cozy UI são uma demo; verifique os termos do autor antes de publicar comercialmente.
