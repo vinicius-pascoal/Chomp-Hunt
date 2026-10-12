@@ -12,11 +12,12 @@ type GameBoardProps = {
   invalidCell: string | null;
   disabled?: boolean;
   onPointerDown: (row: number, col: number, event: PointerEvent<HTMLButtonElement>) => void;
+  onPointerEnter: (row: number, col: number, event: PointerEvent<HTMLButtonElement>) => void;
   onPointerUp: (row: number, col: number, event: PointerEvent<HTMLButtonElement>) => void;
   onKeyDown: (row: number, col: number, event: KeyboardEvent<HTMLButtonElement>) => void;
 };
 
-export function GameBoard({ board, cells, invalidCell, disabled = false, onPointerDown, onPointerUp, onKeyDown }: GameBoardProps) {
+export function GameBoard({ board, cells, invalidCell, disabled = false, onPointerDown, onPointerEnter, onPointerUp, onKeyDown }: GameBoardProps) {
   return (
     <div className="board-frame" style={{ "--board-size": board.size } as CSSProperties}>
       <div className="game-board" role="grid" aria-label={`Tabuleiro ${board.size} por ${board.size}`}>
@@ -32,6 +33,7 @@ export function GameBoard({ board, cells, invalidCell, disabled = false, onPoint
               className={`game-cell ${REGION_CLASSES[region % REGION_CLASSES.length]} ${state === "mark" ? "cell-mark" : ""} ${state === "chomp" ? "cell-chomp" : ""} ${invalidCell === key ? "cell-invalid" : ""}`}
               disabled={disabled}
               onPointerDown={(event) => onPointerDown(rowIndex, colIndex, event)}
+              onPointerEnter={(event) => onPointerEnter(rowIndex, colIndex, event)}
               onPointerUp={(event) => onPointerUp(rowIndex, colIndex, event)}
               onKeyDown={(event) => onKeyDown(rowIndex, colIndex, event)}
             >
