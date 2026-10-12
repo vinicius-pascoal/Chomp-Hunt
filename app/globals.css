@@ -100,10 +100,10 @@
 .generation-overlay { position: fixed; inset: 0; z-index: 9; display: grid; place-items: center; background: rgba(255, 250, 240, .72); color: #a96c59; font-size: 15px; backdrop-filter: blur(2px); }
 
 @media (min-width: 561px) {
-  body, button, .game-cell {
-    cursor: url('/assets/ui/cozy/cursors/large/Cursor1_128px.png') 12 4, auto;
+  html, body, button, a, [role="button"], .game-cell {
+    cursor: url('/assets/ui/cozy/cursors/small/Cursor2_32px.png') 4 2, auto !important;
   }
-  button:active, .game-cell:active {
-    cursor: url('/assets/ui/cozy/cursors/large/Cursor1Clicked_128px.png') 12 4, grabbing;
+  button:active, a:active, [role="button"]:active, .game-cell:active {
+    cursor: url('/assets/ui/cozy/cursors/small/Cursor2Clicked_32px.png') 4 2, auto !important;
   }
 }
