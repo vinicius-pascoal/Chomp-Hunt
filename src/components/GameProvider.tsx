@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { KeyboardEvent, PointerEvent, ReactNode } from "react";
 import {
   boardCellKey,
@@ -68,6 +68,35 @@ function readProgress(): Progress {
   }
 }
 
+let clientProgressSnapshot = DEFAULT_PROGRESS;
+let clientProgressInitialized = false;
+const progressListeners = new Set<() => void>();
+
+function getProgressSnapshot() {
+  if (typeof window === "undefined") return DEFAULT_PROGRESS;
+  if (!clientProgressInitialized) {
+    clientProgressSnapshot = readProgress();
+    clientProgressInitialized = true;
+  }
+  return clientProgressSnapshot;
+}
+
+function getServerProgressSnapshot() {
+  return DEFAULT_PROGRESS;
+}
+
+function subscribeToProgress(listener: () => void) {
+  progressListeners.add(listener);
+  return () => progressListeners.delete(listener);
+}
+
+function updateProgress(updater: (current: Progress) => Progress) {
+  const next = updater(getProgressSnapshot());
+  clientProgressSnapshot = next;
+  if (typeof window !== "undefined") window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  progressListeners.forEach((listener) => listener());
+}
+
 function freshBoardForLevel(level: LevelDefinition): Board {
   if (level.id === "tutorial-4x4") return TUTORIAL_BOARD;
   if (level.id === "easy-4x4") return EASY_BOARD;
@@ -92,7 +121,7 @@ const GameContext = createContext<GameContextValue | null>(null);
 
 export function GameProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const [progress, setProgress] = useState<Progress>(readProgress);
+  const progress = useSyncExternalStore(subscribeToProgress, getProgressSnapshot, getServerProgressSnapshot);
   const [selectedLevel, setSelectedLevel] = useState<LevelDefinition>(LEVELS[0]);
   const [board, setBoard] = useState<Board>(TUTORIAL_BOARD);
   const [cells, setCells] = useState<GameCells>(() => createEmptyCells(TUTORIAL_BOARD.size));
@@ -110,10 +139,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const dragGesture = useRef<{ pointerId: number; startKey: string; baseCells: GameCells; mode: "mark" | "erase" | "none"; moved: boolean; visited: Set<string>; historyCaptured: boolean } | null>(null);
   const invalidTimer = useRef<number | null>(null);
   const generator = useRef<Worker | null>(null);
-
-  useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
-  }, [progress]);
 
   useEffect(() => () => {
     generator.current?.terminate();
@@ -231,7 +256,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     commitCells(next);
     if (isComplete(board, positionsFromCells(next))) {
       setPhase("victory");
-      setProgress((current) => {
+      updateProgress((current) => {
         const completed = current.completed.includes(selectedLevel.id) ? current.completed : [...current.completed, selectedLevel.id];
         const levelIndex = LEVELS.findIndex((level) => level.id === selectedLevel.id);
         const followingLevel = LEVELS[levelIndex + 1];
