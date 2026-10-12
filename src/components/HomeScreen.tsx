@@ -18,9 +18,8 @@ export function HomeScreen() {
   return (
     <section className="home-screen page-content">
       <div className="home-copy">
-        <p className="eyebrow">UM PUZZLE DE LÓGICA ACONCHEGANTE</p>
         <h1>CHOMP <span>HUNT</span></h1>
-        <p className="home-description">Ajude os Chomps a encontrar seu cantinho. Pense com calma, marque suas pistas e deixe cada mordida no lugar certo.</p>
+        <p className="home-description">Ajude os Chomps a encontrar seu cantinho. Pense com calma, marque suas pistas e deixe cada Chomp no lugar certo.</p>
         <div className="home-actions">
           <CozyButton onClick={() => openLevel(LEVELS[0])}>Jogar agora <span className="button-arrow">→</span></CozyButton>
           <CozyButton tone="secondary" className="infinite-button" onClick={startInfinite}><span className="infinite-icon" aria-hidden>∞</span> Modo infinito</CozyButton>

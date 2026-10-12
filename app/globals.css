@@ -238,7 +238,8 @@ h2 {
 }
 .art-card {
   width: 260px;
-  height: 160px;
+  min-height: 160px;
+  height: auto;
   padding: 24px 26px;
   position: absolute;
   right: 3%;
@@ -251,6 +252,7 @@ h2 {
   color: #bd8873;
   font-size: 12px;
   text-align: center;
+  overflow: hidden;
 }
 .art-card span {
   display: block;
