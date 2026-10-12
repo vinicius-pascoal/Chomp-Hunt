@@ -34,6 +34,18 @@ export const TUTORIAL_BOARD: Board = {
   solution: TUTORIAL_SOLUTION,
 };
 
+export const EASY_BOARD: Board = {
+  id: "easy-4x4",
+  size: 4,
+  regions: [
+    [1, 1, 0, 2],
+    [1, 1, 0, 2],
+    [1, 3, 0, 2],
+    [1, 3, 0, 2],
+  ],
+  seed: 2402,
+};
+
 export function createEmptyCells(size: number): GameCells {
   return Array.from({ length: size }, () =>
     Array<CellState>(size).fill("empty"),

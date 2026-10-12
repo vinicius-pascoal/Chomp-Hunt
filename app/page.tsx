@@ -12,6 +12,7 @@ import {
   cloneCells,
   createEmptyCells,
   positionsFromCells,
+  EASY_BOARD,
   TUTORIAL_BOARD,
   type Board,
   type GameCells,
@@ -40,7 +41,7 @@ function readProgress(): Progress {
 
 function freshBoardForLevel(level: LevelDefinition): Board {
   if (level.id === "tutorial-4x4") return TUTORIAL_BOARD;
-  if (level.id === "easy-4x4") return { ...TUTORIAL_BOARD, id: level.id, seed: level.seed };
+  if (level.id === "easy-4x4") return EASY_BOARD;
   throw new Error("Este nível precisa ser preparado pelo gerador.");
 }
 

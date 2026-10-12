@@ -21,7 +21,22 @@ type GameBoardProps = {
 export function GameBoard({ board, cells, invalidCell, disabled = false, onPointerDown, onPointerEnter, onPointerMove = onPointerEnter, onPointerUp, onKeyDown }: GameBoardProps) {
   return (
     <div className="board-frame" style={{ "--board-size": board.size } as CSSProperties}>
-      <div className="game-board" role="grid" aria-label={`Tabuleiro ${board.size} por ${board.size}`}>
+      <div
+        className="game-board"
+        role="grid"
+        aria-label={`Tabuleiro ${board.size} por ${board.size}`}
+        onPointerMove={(event) => {
+          const target = event.target;
+          if (!(target instanceof Element)) return;
+          const cell = target.closest<HTMLButtonElement>("[data-row][data-col]");
+          if (!cell) return;
+          onPointerMove(
+            Number(cell.dataset.row),
+            Number(cell.dataset.col),
+            event as unknown as PointerEvent<HTMLButtonElement>,
+          );
+        }}
+      >
         {cells.map((row, rowIndex) => row.map((state, colIndex) => {
           const key = `${rowIndex}:${colIndex}`;
           const region = board.regions[rowIndex][colIndex];
@@ -30,6 +45,8 @@ export function GameBoard({ board, cells, invalidCell, disabled = false, onPoint
               key={key}
               type="button"
               role="gridcell"
+              data-row={rowIndex}
+              data-col={colIndex}
               aria-label={`Linha ${rowIndex + 1}, coluna ${colIndex + 1}, ${state === "empty" ? "vazia" : state === "mark" ? "marcada" : "Chomp"}`}
               className={`game-cell ${REGION_CLASSES[region % REGION_CLASSES.length]} ${state === "mark" ? "cell-mark" : ""} ${state === "chomp" ? "cell-chomp" : ""} ${invalidCell === key ? "cell-invalid" : ""}`}
               disabled={disabled}
